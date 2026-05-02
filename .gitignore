@@ -34,3 +34,34 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Benchmark / generated results  ###
+results-sokoban/
+results-sokoban-*/
+
+### Local scratch (e.g. java ... > test.out 2> test.err) — project root only ###
+/test.err
+/test.out
+
+### Python  ###
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.python-version
+.env
+.env.local
+
+### Logs & temp ###
+*.log
+tmp/
+temp/
+*.tmp
+*.swp
+*~
+

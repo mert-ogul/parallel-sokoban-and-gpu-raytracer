@@ -1,9 +1,0 @@
-Level Loaded Successfully!
-Dimensions: 5 x 6
-Player Position: Point[x=1, y=2]
-Number of Crates: 2
-Link: https://dangarfield.github.io/sokoban-solver/?name=test-app&w=5&h=6&grid=IyMjIyMjIyMuIyNAIyojIyAkICMjICAgIyMjIyMj
-pool_async_mode: false
-Invoked task
-waited 1 seconds. Pool: java.util.concurrent.ForkJoinPool@5ecddf8f[Running, parallelism = 4, size = 4, active = 0, running = 0, steals = 18, tasks = 0, submissions = 0]
-pool_status elapsed_s=1 async=false threads=4 parallelism=4 size=4 active=0 running=0 steals=18 queued_tasks=0 queued_submissions=0

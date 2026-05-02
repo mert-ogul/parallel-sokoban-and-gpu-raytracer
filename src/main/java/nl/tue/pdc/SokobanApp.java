@@ -46,6 +46,13 @@ public class SokobanApp {
                         Use a custom thread-safe implementation for the hash set of explored game states. \
                         Has no effect when using the sequential solver.""");
 
+        parser.addArgument("--async-pool")
+                .dest("async-pool")
+                .action(Arguments.storeTrue())
+                .help("""
+                        Use ForkJoinPool async mode for the parallel solver. \
+                        Has no effect when using the sequential solver.""");
+
         parser.addArgument("level")
                 .type(Arguments.fileType().acceptSystemIn().verifyCanRead().verifyIsFile())
                 .setDefault("-")
@@ -75,6 +82,7 @@ public class SokobanApp {
         }
 
         boolean useCustomSet = namespace.getBoolean("custom-set");
+        boolean asyncPool = namespace.getBoolean("async-pool");
 
         String levelFile = namespace.getString("level");
         Arena arena; GameState state;
@@ -98,7 +106,7 @@ public class SokobanApp {
         );
 
         SokobanSolver solver = namespace.get("mode") ?
-                new ParallelSokobanSolver(arena, state, useCustomSet, numThreads) :
+                new ParallelSokobanSolver(arena, state, useCustomSet, numThreads, asyncPool) :
                 new SequentialSokobanSolver(arena, state);
 
         long start = System.currentTimeMillis();

@@ -15,12 +15,14 @@ public class ParallelSokobanSolver extends SokobanSolver {
     public static final int TIMEOUT = 60;
 
     private final int numThreads;
+    private final boolean asyncMode;
 
-    public ParallelSokobanSolver(Arena arena, GameState initialState, boolean useCustomSet, int numThreads) {
+    public ParallelSokobanSolver(Arena arena, GameState initialState, boolean useCustomSet, int numThreads, boolean asyncMode) {
         super(arena, initialState, useCustomSet ?
                 new CustomConcurrentHashSet<>(30_000) :
                 new ConcurrentHashSet<>(30_000_000, numThreads));
         this.numThreads = numThreads;
+        this.asyncMode = asyncMode;
     }
 
     @Override
@@ -29,7 +31,8 @@ public class ParallelSokobanSolver extends SokobanSolver {
 
         int wait = 0;
         ExplorationExceptionHandler ueh = new ExplorationExceptionHandler();
-        try (ForkJoinPool pool = new ForkJoinPool(numThreads, ForkJoinPool.defaultForkJoinWorkerThreadFactory, ueh, false)) {
+        System.err.println("pool_async_mode: " + asyncMode);
+        try (ForkJoinPool pool = new ForkJoinPool(numThreads, ForkJoinPool.defaultForkJoinWorkerThreadFactory, ueh, asyncMode)) {
             pool.setParallelism(numThreads);
             pool.execute(new ExplorationAction(initialState));
             System.err.println("Invoked task");
@@ -37,6 +40,18 @@ public class ParallelSokobanSolver extends SokobanSolver {
                 Thread.sleep(1000);
                 wait++;
                 System.err.println("waited " + wait + " seconds. Pool: " + pool);
+                System.err.printf(
+                        "pool_status elapsed_s=%d async=%b threads=%d parallelism=%d size=%d active=%d running=%d steals=%d queued_tasks=%d queued_submissions=%d%n",
+                        wait,
+                        asyncMode,
+                        numThreads,
+                        pool.getParallelism(),
+                        pool.getPoolSize(),
+                        pool.getActiveThreadCount(),
+                        pool.getRunningThreadCount(),
+                        pool.getStealCount(),
+                        pool.getQueuedTaskCount(),
+                        pool.getQueuedSubmissionCount());
             }
         } catch (InterruptedException e) {
             throw new RuntimeException("Execution of the thread pool was interrupted.", e);

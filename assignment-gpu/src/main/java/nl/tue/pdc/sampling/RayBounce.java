@@ -1,6 +1,7 @@
 package nl.tue.pdc.sampling;
 
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
 
 public class RayBounce {
 	
@@ -14,8 +15,10 @@ public class RayBounce {
 		float y = 0.0f;
 
 		Triangle t = new Triangle(0.5f, 0.0f, -0.5f, -0.5f, -0.5f, 0.5f);
-		// TODO: Generate random samples, and reject if sample is outside of triangle
-		// TIP: use t.is_in_triangle(x, y)
+		do {
+			x = random.random(-0.5f, 0.5f);
+			y = random.random(-0.5f, 0.5f);
+		} while (!t.isInTriangle(x, y));
 
 		return Sampler.sample(context, x, y);
 	}
@@ -24,8 +27,16 @@ public class RayBounce {
 		float x = 0.0f; 
 		float y = 0.0f;
 
-		// TODO: Faster method of generating samples inside a triangle
-		// TIP: A linear transformation can be a useful step in converting a square into a triangle
+		float u = random.random(0.0f, 1.0f);
+		float v = random.random(0.0f, 1.0f);
+
+		if (u + v > 1.0f) {
+			u = 1.0f - u;
+			v = 1.0f - v;
+		}
+
+		x = 0.5f - u - v;
+		y = 0.5f * (v - u);
 
 		return Sampler.sample(context, x, y);
 	}
@@ -34,7 +45,10 @@ public class RayBounce {
 		float x = 0.0f; 
 		float y = 0.0f;
 
-		// TODO: Generate random samples, and reject if sample is outside of circle
+		do {
+			x = random.random(-1.0f, 1.0f);
+			y = random.random(-1.0f, 1.0f);
+		} while (x * x + y * y >= 1.0f);
 
 		return Sampler.sample(context, x, y);
 	}
@@ -43,8 +57,11 @@ public class RayBounce {
 		float x = 0.0f; 
 		float y = 0.0f;
 
-		// TODO: Find more efficient approach to uniform sampling
-		// TIP: use the methods in TornadoMath to get access to special float32 functions
+		float radius = TornadoMath.sqrt(random.random(0.0f, 1.0f));
+		float angle = random.random(0.0f, 2.0f * TornadoMath.floatPI());
+
+		x = radius * TornadoMath.cos(angle);
+		y = radius * TornadoMath.sin(angle);
 
 		return Sampler.sample(context, x, y);
 	}

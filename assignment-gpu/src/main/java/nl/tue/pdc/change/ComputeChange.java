@@ -16,18 +16,73 @@ public class ComputeChange {
 
     private static void changeKernel(KernelContext context, Matrix2DInt table, IntArray coins, int amount) {
         //TODO: create implementation
+        
+        // Amount column number = workerIdx 
+        int workerIdx  = context.globalIdx;       
+        
+        int coinNr = coins.getSize();
+
+        // Base case
+        table.set(0, workerIdx , workerIdx  == 0 ? 0 : coinNr + 1);
+
+        // All seperate workers need to finish row 0 before any of them can move (Synchronization)
+        context.localBarrier();
+
+        for (int Id = 0; Id < coinNr; Id++) {
+            int result;
+            int thisCoin = coins.get(Id);
+            int notUseCoin = table.get(Id, workerIdx);  
+            if (thisCoin <= workerIdx) {
+                int useCoin = 1 + table.get(Id, workerIdx  - thisCoin);
+                result = Math.min(notUseCoin, useCoin);
+            } else {
+                result = notUseCoin;
+            }
+            table.set(Id + 1, workerIdx , result);
+
+            // All seperate workers need to finish row nr Id+1 before any of them can move (Synchronization)
+            context.localBarrier();
+        }
     }
 
     private static void changeKernelLessMemory(KernelContext context, Matrix2DInt table, IntArray coins, int amount) {
         //TODO: create implementation
+
+        // Amount column number = workerIdx
+        int workerIdx  = context.globalIdx;
+
+        int coinNr = coins.getSize();
+
+        // Base case
+        table.set(0, workerIdx , workerIdx  == 0 ? 0 : coinNr + 1);
+
+        // All seperate workers need to finish row 0 before any of them can move (Synchronization)
+        context.localBarrier();
+
+        for (int Id = 0; Id < coinNr; Id++) {
+            int result;
+            int thisCoin = coins.get(Id);
+            int notUseCoin = table.get(Id % 2, workerIdx);
+            if (thisCoin <= workerIdx) {
+                int useCoin = 1 + table.get(Id % 2, workerIdx  - thisCoin);
+                result = Math.min(notUseCoin, useCoin);
+            } else {
+                result = notUseCoin;
+            }
+            table.set((Id + 1) % 2, workerIdx , result);
+
+            // All seperate workers need to finish row nr Id+1 before any of them can move (Synchronization)
+            context.localBarrier();
+        }
     }
 
     public static int runKernel(int[] coins, int amount, boolean lessMemory, boolean printMatrix) {
         // Initialize data structures
         IntArray coinsA = IntArray.fromArray(coins);
-        Matrix2DInt table = new Matrix2DInt(lessMemory ? 0 : 1, lessMemory ? 0 : 1); //TODO: set the dimensions of the table to operate on
+        Matrix2DInt table = new Matrix2DInt(lessMemory ? 2 : coins.length + 1, amount + 1); //TODO: set the dimensions of the table to operate on
 
-        WorkerGrid workerGrid = new WorkerGrid1D(1);    //TODO: fill in the number of workers
+        WorkerGrid workerGrid = new WorkerGrid1D(amount + 1);    //TODO: fill in the number of workers
+        workerGrid.setLocalWork(amount + 1, 1, 1);
         GridScheduler gridScheduler = new GridScheduler("computeChange.t1", workerGrid);  // Attach the worker to the Grid
         KernelContext context = new KernelContext();
 
@@ -49,7 +104,12 @@ public class ComputeChange {
         if (printMatrix) {
             System.out.println(table);
         }
-        return 0; //TODO: return the final result
+       
+        if (lessMemory) {
+            return table.get((coins.length) % 2, amount); 
+        } else {
+            return table.get(coins.length, amount);
+        }//TODO: return the final result
     }
 
     /**
@@ -161,8 +221,8 @@ public class ComputeChange {
 
     private static void run(int[] coins, int amount) {
         int recursiveResult = computeRecursive(coins, amount);
-        int dynamicResult = computeDynamic(coins, amount, false);
-        int gpuResult = runKernel(coins, amount,false, false);
+        int dynamicResult = computeDynamic(coins, amount, true);
+        int gpuResult = runKernel(coins, amount,false, true);
         int gpuLessMemoryResult = runKernel(coins, amount,true, false);
 
         System.out.println("Amount " + amount + " with coins " + Arrays.toString(coins) + ":");
